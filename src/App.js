@@ -222,11 +222,6 @@ function ClienteForm({ onVolver }) {
   <p style={{ fontSize: 14, color: "#666", lineHeight: 1.7, margin: 0 }}>Sus respuestas fueron registradas. En los próximos días el equipo de Austral Financial Consulting estará en contacto con los resultados de su informe de madurez financiera.</p>
 </div>
       )}
-      <div style={{ background: "#eff6ff", borderRadius: 12, padding: "1.5rem", textAlign: "center", border: "1px solid #bfdbfe" }}>
-        <p style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 500, color: "#1a56db" }}>¿Quiere convertir este diagnóstico en un plan de acción concreto?</p>
-        <p style={{ margin: "0 0 1rem", fontSize: 13, color: "#3b82f6", lineHeight: 1.5 }}>Nuestro equipo prepara un informe completo con benchmarks de industria y un plan de transformación a 90 días.</p>
-        <a href="mailto:contacto@australconsulting.com" style={{ display: "inline-block", padding: "10px 24px", fontSize: 14, background: "#1a56db", color: "#fff", borderRadius: 8, textDecoration: "none", fontWeight: 500 }}>Hablar con un especialista →</a>
-      </div>
     </div>
   );
 }
@@ -479,7 +474,7 @@ function App() {
           <button onClick={() => setVista("analista")} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 1.5rem", borderRadius: 12, cursor: "pointer", textAlign: "left", border: "1.5px solid #dc262633", background: "#fff", color: "#111" }}>
             <div>
               <p style={{ margin: "0 0 3px", fontSize: 15, fontWeight: 500 }}>Soy analista</p>
-              <p style={{ margin: 0, fontSize: 13, opacity: .8 }}>Relevamiento avanzado · 90 minutos · 22 preguntas</p>
+              <p style={{ margin: 0, fontSize: 13, opacity: .8 }}>Relevamiento avanzado</p>
             </div>
             <span style={{ fontSize: 20 }}>→</span>
           </button>
