@@ -111,7 +111,45 @@ function ClienteForm({ onVolver }) {
     if (q.id === "emp" && typeof sel.v === "number" && sel.v >= 1) setTrk("s");
     setAns(a => ({ ...a, [q.id]: sel }));
     setSel(null);
-    if (idx + 1 >= qs.length) setPh("r");
+    if (idx + 1 >= qs.length) {
+  setPh("r");
+  // Enviar respuestas a la API
+  const dimScores = {};
+  const allAns = { ...ans, [q.id]: sel };
+  const sc = {}, cn = {};
+  qs.forEach(({ id, d }) => {
+    const a = allAns[id];
+    if (!d || !a || typeof a.v !== 'number') return;
+    sc[d] = (sc[d] || 0) + a.v;
+    cn[d] = (cn[d] || 0) + 1;
+  });
+  const dims = {};
+  Object.keys(sc).forEach(d => { dims[d] = Math.round(sc[d] / cn[d]); });
+  const imfTotal = Object.keys(dims).length
+    ? Math.round(Object.values(dims).reduce((a, b) => a + b, 0) / Object.keys(dims).length)
+    : 0;
+
+  fetch('/api/generar-informe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      tipo: 'cliente',
+      empresa: co,
+      sector: allAns?.sec?.l || '',
+      analista: '',
+      imf_total: imfTotal,
+      dimensiones: {
+        gobernanza: dims.est || 0,
+        planificacion: dims.pla || 0,
+        tesoreria: dims.tes || 0,
+        costos: dims.cos || 0,
+        operaciones: dims.ope || 0,
+        financiamiento: dims.fin || 0
+      },
+      respuestas: allAns
+    })
+  }).catch(err => console.error('Error enviando informe:', err));
+}
     else setIdx(i => i + 1);
   }
 
