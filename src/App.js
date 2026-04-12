@@ -324,7 +324,38 @@ function AnalistaForm({ onVolver }) {
     if (dir === "n") {
       if (si + 1 < dim.ss.length) setSi(i => i + 1);
       else if (di + 1 < DA.length) { setDi(i => i + 1); setSi(0); }
-      else setPh("sum");
+      else {
+  setPh("sum");
+  // Calcular puntajes finales
+  const finalSc = sel !== null && qk ? { ...sc, [qk]: sel } : sc;
+  const dscFinal = DA.map(d => {
+    const vs = d.ss.map(s => finalSc[s.id]).filter(v => v !== undefined);
+    return { id: d.id, s: vs.length ? Math.round(vs.reduce((a, b) => a + b, 0) / vs.length) : 0 };
+  });
+  const imfFinal = Math.round(dscFinal.reduce((a, b) => a + b.s, 0) / dscFinal.length);
+  const dimMap = Object.fromEntries(dscFinal.map(d => [d.id, d.s]));
+
+  fetch('/api/generar-informe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      tipo: 'analista',
+      empresa: inf.emp,
+      sector: inf.sec,
+      analista: inf.ana,
+      imf_total: imfFinal,
+      dimensiones: {
+        gobernanza: dimMap.g || 0,
+        planificacion: dimMap.p || 0,
+        tesoreria: dimMap.t || 0,
+        costos: dimMap.c || 0,
+        operaciones: dimMap.o || 0,
+        financiamiento: dimMap.f || 0
+      },
+      respuestas: { scores: finalSc, notas: nt, evidencia: ev }
+    })
+  }).catch(err => console.error('Error enviando informe analista:', err));
+}
     } else {
       if (si > 0) setSi(i => i - 1);
       else if (di > 0) { setDi(i => i - 1); setSi(DA[di - 1].ss.length - 1); }
