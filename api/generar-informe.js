@@ -196,7 +196,7 @@ if (!informeTexto) {
       },
       body: JSON.stringify({
         from: 'onboarding@resend.dev',
-        to: 'nsarich92@gmail.com',
+        to: 'nsarich@consultingaustral.com',
         subject: `Nuevo diagnóstico IMF — ${empresa || 'Empresa sin nombre'} (${imf_total}/100)`,
         html: `
           <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto;">
