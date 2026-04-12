@@ -195,7 +195,7 @@ if (!informeTexto) {
         'Authorization': `Bearer ${process.env.RESEND_API_KEY}`
       },
       body: JSON.stringify({
-        from: 'onboarding@resend.dev',
+        from: 'noreply@consultingaustral.com',
         to: 'nsarich@consultingaustral.com',
         subject: `Nuevo diagnóstico IMF — ${empresa || 'Empresa sin nombre'} (${imf_total}/100)`,
         html: `
@@ -216,7 +216,19 @@ if (!informeTexto) {
     });
 
     // 4. Guardar en OneDrive
-    await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/guardar-onedrive`, {
+    const onedriveResponse = await fetch(`https://austral-imf.vercel.app/api/guardar-onedrive`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    empresa,
+    informe_texto: informeTexto,
+    imf_total,
+    tipo,
+    fecha: new Date().toISOString().slice(0, 10)
+  })
+});
+const onedriveData = await onedriveResponse.json();
+console.log('OneDrive result:', JSON.stringify(onedriveData));
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
