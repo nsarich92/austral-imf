@@ -153,9 +153,9 @@ Redactá el informe completo siguiendo la estructura indicada.`
     const claudeData = await claudeResponse.json();
     const informeTexto = claudeData.content?.[0]?.text;
 
-    if (!informeTexto) {
-      throw new Error('Claude no devolvió contenido');
-    }
+if (!informeTexto) {
+  throw new Error('Claude respuesta: ' + JSON.stringify(claudeData));
+}
 
     // 2. Guardar en Supabase
     const supabaseResponse = await fetch(`${process.env.SUPABASE_URL}/rest/v1/diagnosticos`, {
