@@ -98,7 +98,68 @@ CONFIDENCIAL — USO EXCLUSIVO DE AUSTRAL FINANCIAL CONSULTING
 [Tabla con todas las preguntas, respuesta seleccionada y puntaje, agrupadas por dimensión]
 `;
 
-module.exports = async function handler(req, res) {
+async function getAzureToken(tenantId, clientId, clientSecret) {
+  const response = await fetch(
+    `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'client_credentials',
+        client_id: clientId,
+        client_secret: clientSecret,
+        scope: 'https://graph.microsoft.com/.default'
+      })
+    }
+  );
+  const data = await response.json();
+  return data.access_token;
+}
+
+async function saveToOneDrive(token, userEmail, empresa, contenido, tipo, imfTotal) {
+  const fechaStr = new Date().toISOString().slice(0, 10);
+  const empresaLimpia = (empresa || 'Sin-nombre').replace(/[^a-zA-Z0-9\s-]/g, '').trim().replace(/\s+/g, '-');
+  const tipoStr = tipo === 'cliente' ? 'Diagnostico-Inicial' : 'Diagnostico-Avanzado';
+  const nombreArchivo = `${fechaStr}_${empresaLimpia}_${tipoStr}_IMF${imfTotal}.txt`;
+  const rutaBase = 'Austral Consulting/Clientes/Diagnosticos IMF Austral';
+  const rutaCompleta = `${rutaBase}/${empresaLimpia}`;
+
+  // Crear carpeta del cliente
+  await fetch(
+    `https://graph.microsoft.com/v1.0/users/${userEmail}/drive/root:/${rutaBase}:/children`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: empresaLimpia,
+        folder: {},
+        '@microsoft.graph.conflictBehavior': 'rename'
+      })
+    }
+  );
+
+  // Subir archivo
+  const uploadResponse = await fetch(
+    `https://graph.microsoft.com/v1.0/users/${userEmail}/drive/root:/${rutaCompleta}/${nombreArchivo}:/content`,
+    {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'text/plain; charset=utf-8'
+      },
+      body: contenido
+    }
+  );
+
+  const uploadData = await uploadResponse.json();
+  console.log('OneDrive upload result:', JSON.stringify(uploadData));
+  return uploadData;
+}
+
+module.exports = async function handler
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -153,9 +214,9 @@ Redactá el informe completo siguiendo la estructura indicada.`
     const claudeData = await claudeResponse.json();
     const informeTexto = claudeData.content?.[0]?.text;
 
-if (!informeTexto) {
-  throw new Error('Claude respuesta: ' + JSON.stringify(claudeData));
-}
+    if (!informeTexto) {
+      throw new Error('Claude respuesta: ' + JSON.stringify(claudeData));
+    }
 
     // 2. Guardar en Supabase
     const supabaseResponse = await fetch(`${process.env.SUPABASE_URL}/rest/v1/diagnosticos`, {
@@ -187,7 +248,20 @@ if (!informeTexto) {
     const supabaseData = await supabaseResponse.json();
     const diagnosticoId = supabaseData?.[0]?.id;
 
-    // 3. Enviar notificación por email (solo aviso, no el informe completo)
+    // 3. Guardar en OneDrive
+    try {
+      const token = await getAzureToken(
+        process.env.AZURE_TENANT_ID,
+        process.env.AZURE_CLIENT_ID,
+        process.env.AZURE_CLIENT_SECRET
+      );
+      await saveToOneDrive(token, process.env.ONEDRIVE_USER_EMAIL, empresa, informeTexto, tipo, imf_total);
+      console.log('OneDrive: guardado correctamente');
+    } catch (onedriveError) {
+      console.error('OneDrive error:', onedriveError.message);
+    }
+
+    // 4. Enviar notificación por email
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -207,36 +281,9 @@ if (!informeTexto) {
             <p><strong>IMF Total:</strong> ${imf_total}/100</p>
             <p><strong>Fecha:</strong> ${new Date().toLocaleDateString('es-AR')}</p>
             <hr style="border-color: #B9B9B9;" />
-            <p style="color: #B9B9B9; font-size: 12px;">
-              El informe completo está guardado en Supabase con ID: ${diagnosticoId || 'N/A'}
-            </p>
+            <p style="color: #B9B9B9; font-size: 12px;">ID: ${diagnosticoId || 'N/A'}</p>
           </div>
         `
-      })
-    });
-
-    // 4. Guardar en OneDrive
-    const onedriveResponse = await fetch(`https://austral-imf.vercel.app/api/guardar-onedrive`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    empresa,
-    informe_texto: informeTexto,
-    imf_total,
-    tipo,
-    fecha: new Date().toISOString().slice(0, 10)
-  })
-});
-const onedriveData = await onedriveResponse.json();
-console.log('OneDrive result:', JSON.stringify(onedriveData));
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        empresa,
-        informe_texto: informeTexto,
-        imf_total,
-        tipo,
-        fecha: new Date().toISOString().slice(0, 10)
       })
     });
 
