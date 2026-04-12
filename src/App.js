@@ -114,7 +114,6 @@ function ClienteForm({ onVolver }) {
     if (idx + 1 >= qs.length) {
   setPh("r");
   // Enviar respuestas a la API
-  const dimScores = {};
   const allAns = { ...ans, [q.id]: sel };
   const sc = {}, cn = {};
   qs.forEach(({ id, d }) => {
