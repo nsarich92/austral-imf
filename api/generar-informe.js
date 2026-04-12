@@ -215,6 +215,19 @@ Redactá el informe completo siguiendo la estructura indicada.`
       })
     });
 
+    // 4. Guardar en OneDrive
+    await fetch(`${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_URL : 'http://localhost:3000'}/api/guardar-onedrive`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        empresa,
+        informe_texto: informeTexto,
+        imf_total,
+        tipo,
+        fecha: new Date().toISOString().slice(0, 10)
+      })
+    });
+
     return res.status(200).json({
       success: true,
       diagnosticoId,
