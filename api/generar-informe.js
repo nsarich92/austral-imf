@@ -1,7 +1,8 @@
 const SKILL = `Eres el redactor de informes de Austral Financial Consulting. Redactá un informe de diagnóstico de madurez financiera profesional.
 
-TONO: consultor senior Big Four, directo, sin vueltas, para gerentes sin perfil técnico financiero.
-REGLAS: párrafos cortos, voz activa, sin muletillas, lenguaje de negocio simple.
+TONO: consultor senior Big Four, profesional y directo, sin exceso de formalidad, para gerentes sin perfil técnico financiero.
+LÓGICA: Explicar para cada dimensión la situación actual y que riesgos implica estar en esa situación, los cambios a introducir para lograr la situación deseada y que fortalezas generaría para el negocio.
+REGLAS: párrafos cortos/medianos, voz activa, sin muletillas, lenguaje de negocio simple. Utilizar conectores para que la lectura sea amena. 
 ESCALA IMF: 0-25 Sin desarrollar / 26-50 En desarrollo / 51-75 Maduro / 76-100 Optimizado
 
 ESTRUCTURA:
@@ -17,7 +18,7 @@ IMF Total: [XX]/100 — [Nivel]
 [Síntesis, dimensiones críticas, 3 acciones inmediatas]
 
 ## RESULTADOS POR DIMENSIÓN
-Para cada dimensión: situación actual, situación deseada, 3 acciones con responsable y horizonte.
+Para cada dimensión: situación actual, situación deseada, 3 acciones y horizonte.
 
 ## TABLA RESUMEN IMF
 [Tabla con las 6 dimensiones y el IMF total]
@@ -199,3 +200,35 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: error.message });
   }
 };
+// Generar PDF y subir a OneDrive
+try {
+  const pdfResponse = await fetch("https://austral-imf.vercel.app/api/generar-pdf", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      informe_texto: informeTexto,
+      empresa: empresa,
+      imf_total: imf_total,
+      tipo: tipo,
+      fecha: new Date().toLocaleDateString("es-AR")
+    })
+  });
+  if (pdfResponse.ok) {
+    const pdfBuffer = await pdfResponse.arrayBuffer();
+    const pdfBytes = Buffer.from(pdfBuffer);
+    const fechaStr = new Date().toISOString().slice(0, 10);
+    const empresaLimpia = (empresa || "Sin-nombre").replace(/[^a-zA-Z0-9\s-]/g, "").trim().replace(/\s+/g, "-");
+    const tipoStr = tipo === "cliente" ? "Diagnostico-Inicial" : "Diagnostico-Avanzado";
+    const nombrePdf = fechaStr + "_" + empresaLimpia + "_" + tipoStr + "_IMF" + imf_total + ".pdf";
+    const rutaCompleta = "Austral Consulting/Clientes/Diagnosticos IMF Austral/" + empresaLimpia;
+    const token = await getAzureToken(process.env.AZURE_TENANT_ID, process.env.AZURE_CLIENT_ID, process.env.AZURE_CLIENT_SECRET);
+    await fetch("https://graph.microsoft.com/v1.0/users/" + process.env.ONEDRIVE_USER_EMAIL + "/drive/root:/" + rutaCompleta + "/" + nombrePdf + ":/content", {
+      method: "PUT",
+      headers: { "Authorization": "Bearer " + token, "Content-Type": "application/pdf" },
+      body: pdfBytes
+    });
+    console.log("PDF guardado en OneDrive: " + nombrePdf);
+  }
+} catch (pdfError) {
+  console.error("PDF error:", pdfError.message);
+}
