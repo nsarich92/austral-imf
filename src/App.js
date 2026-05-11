@@ -3,26 +3,39 @@ import { useState, useMemo } from "react";
 const PASS = "Austral2026";
 
 const Q = [
-  { id: "emp", s: "Información de la empresa", t: "all", d: null, q: "¿Cuántas personas trabajan en su empresa?", o: [{ l: "1 a 4 personas", v: 0 }, { l: "5 a 20 personas", v: 1 }, { l: "21 a 50 personas", v: 2 }, { l: "Más de 50 personas", v: 3 }] },
-  { id: "rev", s: "Información de la empresa", t: "all", d: null, q: "¿Cuál es la facturación anual aproximada?", o: [{ l: "Menos de USD 100.000 al año", v: "micro" }, { l: "USD 100.000 a 500.000", v: "small" }, { l: "USD 500.000 a 2.000.000", v: "mid" }, { l: "Más de USD 2.000.000", v: "large" }] },
-  { id: "sec", s: "Información de la empresa", t: "all", d: null, q: "¿En qué sector opera su empresa?", o: [{ l: "Comercio y distribución", v: "comercio" }, { l: "Servicios profesionales y tecnología", v: "servicios" }, { l: "Industria y manufactura", v: "industria" }, { l: "Construcción e inmobiliario", v: "construccion" }] },
-  { id: "plan", s: "Estrategia y Gobernanza", t: "all", d: "est", q: "¿Su empresa tiene un plan financiero o presupuesto para este año?", o: [{ l: "No. Las decisiones se toman día a día", v: 0 }, { l: "Tenemos una idea general, pero no está escrita", v: 33 }, { l: "Sí, tenemos un presupuesto básico en planilla", v: 66 }, { l: "Sí, con metas, escenarios y seguimiento mensual", v: 100 }] },
-  { id: "resp", s: "Estrategia y Gobernanza", t: "all", d: "est", q: "¿Quién toma las decisiones financieras importantes?", o: [{ l: "El dueño o socio, sin apoyo financiero formal", v: 0 }, { l: "El dueño, apoyado por un contador para impuestos", v: 33 }, { l: "Hay un área de administración o finanzas interna", v: 66 }, { l: "Hay un gerente financiero o CFO dedicado", v: 100 }] },
-  { id: "proc", s: "Estrategia y Gobernanza", t: "std", d: "est", q: "¿Los procesos financieros están documentados?", o: [{ l: "No existen procesos formales", v: 0 }, { l: "Existen informalmente, no están escritos", v: 33 }, { l: "Algunos procesos clave están documentados", v: 66 }, { l: "Todos documentados y actualizados regularmente", v: 100 }] },
-  { id: "res", s: "Planificación y Análisis", t: "all", d: "pla", q: "¿Con qué frecuencia revisa los resultados financieros?", o: [{ l: "Nunca, o solo ante problemas urgentes", v: 0 }, { l: "Una o dos veces al año", v: 33 }, { l: "Cada trimestre", v: 66 }, { l: "Todos los meses", v: 100 }] },
-  { id: "proy", s: "Planificación y Análisis", t: "all", d: "pla", q: "¿Tiene proyecciones de ingresos y gastos para los próximos 3 a 6 meses?", o: [{ l: "No trabajamos con proyecciones", v: 0 }, { l: "Mentalmente sí, pero no documentado", v: 33 }, { l: "Sí, en una planilla básica", v: 66 }, { l: "Sí, con múltiples escenarios y actualización regular", v: 100 }] },
-  { id: "kpi", s: "Planificación y Análisis", t: "std", d: "pla", q: "¿Utiliza indicadores financieros para monitorear el negocio?", o: [{ l: "No uso este tipo de indicadores", v: 0 }, { l: "Los conozco pero no los calculo regularmente", v: 33 }, { l: "Calculo 2 o 3 indicadores básicos", v: 66 }, { l: "Tenemos un tablero de indicadores mensual", v: 100 }] },
-  { id: "caj", s: "Tesorería y Liquidez", t: "all", d: "tes", q: "¿Cómo controla el flujo de dinero de su empresa?", o: [{ l: "Reviso el saldo bancario cuando surge una necesidad", v: 0 }, { l: "Tengo un control general sin mucho detalle", v: 33 }, { l: "Registro todos los movimientos en una planilla", v: 66 }, { l: "Tengo proyección de caja a 30-90 días con seguimiento activo", v: 100 }] },
-  { id: "ctas", s: "Tesorería y Liquidez", t: "all", d: "tes", q: "¿Las finanzas de la empresa están separadas de las del dueño?", o: [{ l: "No, se mezclan habitualmente", v: 0 }, { l: "A veces se mezclan, estamos ordenando", v: 33 }, { l: "Están separadas aunque sin política formal", v: 66 }, { l: "Completamente separadas, con política documentada", v: 100 }] },
-  { id: "liq", s: "Tesorería y Liquidez", t: "all", d: "tes", q: "Si sus ingresos se detuvieran hoy, ¿cuánto tiempo podría operar?", o: [{ l: "Menos de 15 días", v: 0 }, { l: "Entre 15 y 30 días", v: 33 }, { l: "Entre 1 y 3 meses", v: 66 }, { l: "Más de 3 meses", v: 100 }] },
-  { id: "cos", s: "Costos y Rentabilidad", t: "all", d: "cos", q: "¿Conoce el costo exacto de cada producto o servicio que ofrece?", o: [{ l: "No, estimo los costos de forma global", v: 0 }, { l: "Tengo una idea aproximada por producto", v: 33 }, { l: "Sí, de los principales productos o servicios", v: 66 }, { l: "Sí, de todos, con actualización periódica", v: 100 }] },
-  { id: "rent", s: "Costos y Rentabilidad", t: "all", d: "cos", q: "¿Sabe cuál de sus productos o clientes le genera más GANANCIA?", o: [{ l: "No tengo esa información", v: 0 }, { l: "Lo intuyo, sin datos para confirmarlo", v: 33 }, { l: "Tengo datos parciales para algunas líneas", v: 66 }, { l: "Sí, con datos actualizados por línea de negocio", v: 100 }] },
-  { id: "gcont", s: "Costos y Rentabilidad", t: "std", d: "cos", q: "¿Tiene un proceso formal para controlar los gastos?", o: [{ l: "No, los gastos se aprueban sin proceso definido", v: 0 }, { l: "Reviso los gastos ocasionalmente", v: 33 }, { l: "Hay revisión mensual sin presupuesto de referencia", v: 66 }, { l: "Hay presupuesto, límites de gasto y aprobaciones definidas", v: 100 }] },
-  { id: "tool", s: "Operaciones y Tecnología", t: "all", d: "ope", q: "¿Qué herramientas usa para gestionar las finanzas?", o: [{ l: "Solo planillas de Excel o papel", v: 0 }, { l: "Excel más algún sistema básico de facturación", v: 33 }, { l: "Software de gestión o sistema contable", v: 66 }, { l: "Sistema integrado (contabilidad + stock + bancos)", v: 100 }] },
-  { id: "ases", s: "Operaciones y Tecnología", t: "all", d: "ope", q: "¿Con qué soporte financiero externo cuenta?", o: [{ l: "Sin soporte formal", v: 0 }, { l: "Contador solo para temas impositivos", v: 33 }, { l: "Contador de gestión o asesor financiero externo", v: 66 }, { l: "Equipo financiero propio más asesoría especializada", v: 100 }] },
-  { id: "conf", s: "Operaciones y Tecnología", t: "all", d: "ope", q: "¿Qué tan confiables son los datos financieros que maneja hoy?", o: [{ l: "No confío en los datos que tenemos", v: 0 }, { l: "Son aproximados, con errores frecuentes", v: 33 }, { l: "Generalmente correctos pero tardan en estar disponibles", v: 66 }, { l: "Precisos y disponibles cuando los necesito", v: 100 }] },
-  { id: "cred", s: "Financiamiento", t: "std", d: "fin", q: "¿Tiene acceso a crédito o financiamiento cuando lo necesita?", o: [{ l: "No, no tenemos acceso a crédito formal", v: 0 }, { l: "Acceso muy limitado y con condiciones costosas", v: 33 }, { l: "Acceso moderado, alguna línea bancaria disponible", v: 66 }, { l: "Amplio acceso, múltiples fuentes con condiciones competitivas", v: 100 }] },
-  { id: "deu", s: "Financiamiento", t: "std", d: "fin", q: "¿Conoce y gestiona activamente el endeudamiento de su empresa?", o: [{ l: "No tengo un registro claro de las deudas", v: 0 }, { l: "Conozco las deudas pero no las gestiono activamente", v: 33 }, { l: "Registro la deuda y controlo los vencimientos", v: 66 }, { l: "Gestión activa: monitoreamos y optimizamos costos financieros", v: 100 }] },
+  {id:"soc",s:"Información de la empresa",t:"all",d:null,q:"¿Cuántas sociedades forman parte del negocio a analizar?",o:[{l:"1",v:"1"},{l:"2",v:"2"},{l:"3",v:"3"},{l:"4 o más",v:"4+"}]},
+  {id:"sector",s:"Información de la empresa",t:"all",d:null,q:"¿En qué sector o rama de actividad se desarrolla la empresa?",o:[{l:"Comercio y distribución",v:"comercio"},{l:"Servicios profesionales",v:"servicios"},{l:"Industria y manufactura",v:"industria"},{l:"Construcción e inmobiliario",v:"construccion"},{l:"Agro y agroindustria",v:"agro"},{l:"Salud",v:"salud"},{l:"Educación",v:"educacion"},{l:"Otra",v:"otra"}]},
+  {id:"sede",s:"Información de la empresa",t:"all",d:null,type:"text",q:"¿Dónde está ubicada su sede central? Detalle provincia, ciudad y municipio."},
+  {id:"datos",s:"Información de la empresa",t:"all",d:null,type:"text",q:"Detalle CUIT, razón social, nombre comercial y año de creación para cada sociedad."},
+  {id:"rev",s:"Información de la empresa",t:"all",d:null,q:"¿Cuál es la facturación anual total aproximada entre todas las sociedades?",o:[{l:"Menos de USD 100.000 al año",v:"micro"},{l:"USD 100.000 a 500.000",v:"small"},{l:"USD 500.000 a 2.000.000",v:"mid"},{l:"Más de USD 2.000.000",v:"large"}]},
+  {id:"emp",s:"Información de la empresa",t:"all",d:null,q:"¿Cuántas personas en total trabajan en su empresa?",o:[{l:"1 a 4 personas",v:0},{l:"5 a 20 personas",v:1},{l:"21 a 50 personas",v:2},{l:"Más de 50 personas",v:3}]},
+  {id:"uni",s:"Información de la empresa",t:"all",d:null,q:"¿Cuántas unidades de negocio operativas existen?",o:[{l:"1",v:"1"},{l:"2",v:"2"},{l:"3",v:"3"},{l:"4 o más",v:"4+"}]},
+  {id:"paises",s:"Información de la empresa",t:"all",d:null,q:"¿Tiene presencia en otros países?",o:[{l:"No",v:"no"},{l:"Sí",v:"si"}]},
+  {id:"provincias",s:"Información de la empresa",t:"all",d:null,q:"¿Tiene presencia en otras provincias?",o:[{l:"No",v:"no"},{l:"Sí",v:"si"}]},
+  {id:"familiar",s:"Información de la empresa",t:"all",d:null,q:"¿Es una empresa familiar? En caso afirmativo, ¿cuántas generaciones han gerenciado la empresa?",o:[{l:"No es empresa familiar",v:"no"},{l:"Sí, primera generación",v:"gen1"},{l:"Sí, segunda generación",v:"gen2"},{l:"Sí, tercera generación o más",v:"gen3"}]},
+  {id:"org",s:"Estrategia y Gobernanza",t:"all",d:"est",q:"¿Existe un organigrama que defina claramente los departamentos y responsables de cada área?",o:[{l:"No",v:0},{l:"Sí, pero informal, no está documentado",v:33},{l:"Sí, parcialmente documentado",v:66},{l:"Sí, completo y documentado",v:100}]},
+  {id:"resp_doc",s:"Estrategia y Gobernanza",t:"all",d:"est",q:"¿Existen documentos internos donde se detalle la responsabilidad y límite de funciones para cada encargado de área?",o:[{l:"No",v:0},{l:"Sí, parcialmente documentado",v:50},{l:"Sí, completo y detallado",v:100}]},
+  {id:"plan3",s:"Estrategia y Gobernanza",t:"all",d:"est",q:"¿La empresa tiene un plan de negocios con objetivos aprobados por la junta directiva para los próximos 3 años?",o:[{l:"No",v:0},{l:"Sí, pero informal, no está documentado",v:33},{l:"Sí, parcialmente documentado",v:66},{l:"Sí, completo, documentado y regularmente revisado",v:100}]},
+  {id:"plan",s:"Estrategia y Gobernanza",t:"all",d:"est",q:"¿Su empresa tiene un plan financiero o presupuesto para este año?",o:[{l:"No. Las decisiones se toman día a día",v:0},{l:"Tenemos una idea general, pero no está escrita",v:33},{l:"Sí, tenemos un presupuesto básico en planilla",v:66},{l:"Sí, con metas, escenarios y seguimiento mensual",v:100}]},
+  {id:"dec",s:"Estrategia y Gobernanza",t:"all",d:"est",q:"¿Quién toma las decisiones financieras importantes?",o:[{l:"El dueño o socio, sin apoyo financiero formal",v:0},{l:"El dueño, apoyado por un contador para impuestos",v:33},{l:"Hay un área de administración o finanzas interna",v:66},{l:"Hay un gerente financiero o CFO dedicado",v:100}]},
+  {id:"proc",s:"Estrategia y Gobernanza",t:"std",d:"est",q:"¿Los procesos financieros están documentados (quién hace qué, cómo y cuándo)?",o:[{l:"No existen procesos formales",v:0},{l:"Existen informalmente, no están escritos",v:33},{l:"Algunos procesos clave están documentados",v:66},{l:"Todos documentados y actualizados regularmente",v:100}]},
+  {id:"kpi_txt",s:"Planificación y Análisis",t:"all",d:null,type:"text",q:"¿Cuáles son los indicadores de gestión (KPIs) más utilizados hoy por su empresa? Mencione los principales."},
+  {id:"res",s:"Planificación y Análisis",t:"all",d:"pla",q:"¿Con qué frecuencia se revisan los resultados financieros de su empresa?",o:[{l:"Nunca, o solo ante problemas urgentes",v:0},{l:"Una o dos veces al año",v:33},{l:"Cada trimestre",v:66},{l:"Todos los meses",v:100}]},
+  {id:"proy",s:"Planificación y Análisis",t:"all",d:"pla",q:"¿Tiene proyecciones de ingresos y gastos para los próximos 3 a 6 meses?",o:[{l:"No trabajamos con proyecciones",v:0},{l:"Mentalmente sí, pero no documentado",v:33},{l:"Sí, en una planilla básica",v:66},{l:"Sí, con múltiples escenarios y actualización regular",v:100}]},
+  {id:"kpi",s:"Planificación y Análisis",t:"std",d:"pla",q:"¿Utiliza indicadores financieros para monitorear el negocio?",o:[{l:"No uso este tipo de indicadores",v:0},{l:"Los conozco pero no los calculo regularmente",v:33},{l:"Calculo 2 o 3 indicadores básicos",v:66},{l:"Tenemos un tablero de indicadores mensual",v:100}]},
+  {id:"caj",s:"Tesorería y Liquidez",t:"all",d:"tes",q:"¿Cómo controla el flujo de dinero de su empresa?",o:[{l:"Reviso el saldo bancario cuando surge una necesidad",v:0},{l:"Tengo un control general sin mucho detalle",v:33},{l:"Registro todos los movimientos en una planilla",v:66},{l:"Tengo proyección de caja a 30-90 días con seguimiento activo",v:100}]},
+  {id:"ctas",s:"Tesorería y Liquidez",t:"all",d:"tes",q:"¿Las finanzas de la empresa están separadas de las del dueño?",o:[{l:"No, se mezclan habitualmente",v:0},{l:"A veces se mezclan, estamos ordenando",v:33},{l:"Están separadas aunque sin política formal",v:66},{l:"Completamente separadas, con política documentada",v:100}]},
+  {id:"liq",s:"Tesorería y Liquidez",t:"all",d:"tes",q:"Si sus ingresos se detuvieran hoy, ¿cuánto tiempo podría sobrevivir?",o:[{l:"Menos de 15 días",v:0},{l:"Entre 15 y 30 días",v:33},{l:"Entre 1 y 3 meses",v:66},{l:"Más de 3 meses",v:100}]},
+  {id:"cos",s:"Costos y Rentabilidad",t:"all",d:"cos",q:"¿Conoce el costo exacto de cada producto o servicio que ofrece?",o:[{l:"No, estimo los costos de forma global",v:0},{l:"Tengo una idea aproximada por producto",v:33},{l:"Sí, de los principales productos o servicios",v:66},{l:"Sí, de todos, con actualización periódica",v:100}]},
+  {id:"marg",s:"Costos y Rentabilidad",t:"all",d:"cos",q:"¿Conoce los distintos márgenes que tiene el negocio?",o:[{l:"No conozco los márgenes del negocio",v:0},{l:"Conozco el margen bruto y neto de forma global",v:33},{l:"Conozco el margen bruto y contribución por producto y línea de negocio",v:66},{l:"Calculo márgenes operativos por línea, producto y mercado, incluyendo rentabilidad del capital invertido",v:100}]},
+  {id:"precio",s:"Costos y Rentabilidad",t:"all",d:"cos",q:"¿Se aplican estrategias de pricing o los precios se asignan de forma intuitiva?",o:[{l:"Los precios se asignan de forma intuitiva",v:0},{l:"Los precios se definen en base a un análisis de costos sin incluir impuestos",v:50},{l:"Los precios están en permanente revisión, definidos estratégicamente por condiciones de mercado y financieras",v:100}]},
+  {id:"rent",s:"Costos y Rentabilidad",t:"all",d:"cos",q:"¿Sabe cuál de sus productos o clientes le genera más GANANCIA?",o:[{l:"No tengo esa información",v:0},{l:"Lo intuyo, sin datos para confirmarlo",v:33},{l:"Tengo datos parciales para algunas líneas",v:66},{l:"Sí, con datos actualizados por línea de negocio",v:100}]},
+  {id:"gcont",s:"Costos y Rentabilidad",t:"std",d:"cos",q:"¿Tiene un proceso formal para controlar los gastos?",o:[{l:"No, los gastos se aprueban sin proceso definido",v:0},{l:"Reviso los gastos ocasionalmente",v:33},{l:"Hay revisión mensual sin presupuesto de referencia",v:66},{l:"Hay presupuesto, límites de gasto y aprobaciones definidas",v:100}]},
+  {id:"tool",s:"Operaciones y Tecnología",t:"all",d:"ope",q:"¿Qué herramientas usa para gestionar las finanzas?",o:[{l:"Solo planillas de Excel o papel",v:0},{l:"Excel más algún sistema básico de facturación",v:33},{l:"Software de gestión o sistema contable",v:66},{l:"Sistema integrado (contabilidad + stock + bancos)",v:100}]},
+  {id:"ases",s:"Operaciones y Tecnología",t:"all",d:"ope",q:"¿Con qué soporte financiero externo cuenta?",o:[{l:"Sin soporte formal",v:0},{l:"Contador solo para temas impositivos",v:33},{l:"Contador de gestión o asesor financiero externo",v:66},{l:"Equipo financiero propio más asesoría especializada",v:100}]},
+  {id:"conf",s:"Operaciones y Tecnología",t:"all",d:"ope",q:"¿Qué tan confiables son los datos financieros que maneja hoy?",o:[{l:"No confío en los datos que tenemos",v:0},{l:"Son aproximados, con errores frecuentes",v:33},{l:"Generalmente correctos pero tardan en estar disponibles",v:66},{l:"Precisos y disponibles cuando los necesito",v:100}]},
+  {id:"cred",s:"Financiamiento",t:"std",d:"fin",q:"¿Tiene acceso a crédito o financiamiento cuando lo necesita?",o:[{l:"No, no tenemos acceso a crédito formal",v:0},{l:"Acceso muy limitado y con condiciones costosas",v:33},{l:"Acceso moderado, alguna línea bancaria disponible",v:66},{l:"Amplio acceso, múltiples fuentes con condiciones competitivas",v:100}]},
+  {id:"deu",s:"Financiamiento",t:"std",d:"fin",q:"¿Conoce y gestiona activamente el endeudamiento de su empresa?",o:[{l:"No tengo un registro claro de las deudas",v:0},{l:"Conozco las deudas pero no las gestiono activamente",v:33},{l:"Registro la deuda y controlo los vencimientos",v:66},{l:"Gestión activa: monitoreamos y optimizamos costos financieros",v:100}]},
 ];
 
 const DM = {
@@ -100,61 +113,34 @@ function ClienteForm({ onVolver }) {
   const [ans, setAns] = useState({});
   const [trk, setTrk] = useState("b");
   const [sel, setSel] = useState(null);
+  const [sectorOtro, setSectorOtro] = useState("");
   const [co, setCo] = useState("");
 
   const qs = useMemo(() => Q.filter(q => q.t === "all" || (trk === "s" && q.t === "std")), [trk]);
   const q = qs[idx];
   const pct = qs.length ? Math.round((idx / qs.length) * 100) : 0;
 
-  function next() {
-    if (!sel) return;
-    if (q.id === "emp" && typeof sel.v === "number" && sel.v >= 1) setTrk("s");
-    setAns(a => ({ ...a, [q.id]: sel }));
-    setSel(null);
-    if (idx + 1 >= qs.length) {
-  setPh("r");
-  // Enviar respuestas a la API
-  const allAns = { ...ans, [q.id]: sel };
-  const sc = {}, cn = {};
-  qs.forEach(({ id, d }) => {
-    const a = allAns[id];
-    if (!d || !a || typeof a.v !== 'number') return;
-    sc[d] = (sc[d] || 0) + a.v;
-    cn[d] = (cn[d] || 0) + 1;
-  });
-  const dims = {};
-  Object.keys(sc).forEach(d => { dims[d] = Math.round(sc[d] / cn[d]); });
-  const imfTotal = Object.keys(dims).length
-    ? Math.round(Object.values(dims).reduce((a, b) => a + b, 0) / Object.keys(dims).length)
-    : 0;
+  const isTextQ = q && q.type === "text";
+  const isSectorOtra = q && q.id === "sector" && sel && sel.v === "otra";
+  const isValid = isTextQ
+    ? (typeof sel === "string" && sel.trim().length > 0)
+    : (sel !== null && (!isSectorOtra || sectorOtro.trim().length > 0));
 
-  fetch('/api/generar-informe', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      tipo: 'cliente',
-      empresa: co,
-      sector: allAns?.sec?.l || '',
-      analista: '',
-      imf_total: imfTotal,
-      dimensiones: {
-        gobernanza: dims.est || 0,
-        planificacion: dims.pla || 0,
-        tesoreria: dims.tes || 0,
-        costos: dims.cos || 0,
-        operaciones: dims.ope || 0,
-        financiamiento: dims.fin || 0
-      },
-      respuestas: allAns
-    })
-  }).catch(err => console.error('Error enviando informe:', err));
-}
+  function next() {
+    if (!isValid) return;
+    let stored = sel;
+    if (isTextQ) { stored = { v: sel, l: sel }; }
+    if (q.id === "sector" && sel && sel.v === "otra") { stored = { v: "otra", l: "Otra: " + sectorOtro }; }
+    if (q.id === "emp" && sel && typeof sel.v === "number" && sel.v >= 1) setTrk("s");
+    setAns(a => ({ ...a, [q.id]: stored }));
+    setSel(null); setSectorOtro("");
+    if (idx + 1 >= qs.length) setPh("r");
     else setIdx(i => i + 1);
   }
 
   function back() {
     if (idx === 0) { setPh("w"); setIdx(0); setAns({}); setTrk("b"); setSel(null); return; }
-    setIdx(i => i - 1); setSel(null);
+    setIdx(i => i - 1); setSel(null); setSectorOtro("");
   }
 
   const res = useMemo(() => {
@@ -199,22 +185,31 @@ function ClienteForm({ onVolver }) {
         <div style={{ background: "#1a56db", borderRadius: 4, height: 3, width: pct + "%" }} />
       </div>
       <p style={{ fontSize: 16, fontWeight: 500, lineHeight: 1.55, marginBottom: "1.5rem" }}>{q.q}</p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: "1.5rem" }}>
-        {q.o.map((opt, i) => {
-          const isSel = sel && sel.l === opt.l;
-          return (
-            <button key={i} onClick={() => setSel({ v: opt.v, l: opt.l })} style={{ textAlign: "left", padding: "13px 16px", borderRadius: 10, cursor: "pointer", fontSize: 13, lineHeight: 1.55, display: "flex", alignItems: "center", gap: 10, width: "100%", border: isSel ? "2px solid #1a56db" : "1px solid #e5e7eb", background: isSel ? "#eff6ff" : "#fff", color: isSel ? "#1a56db" : "#111" }}>
-              <span style={{ minWidth: 20, height: 20, borderRadius: "50%", border: isSel ? "2px solid #1a56db" : "1.5px solid #d1d5db", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: isSel ? "#1a56db" : "transparent" }}>
-                {isSel && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff" }} />}
-              </span>
-              {opt.l}
-            </button>
-          );
-        })}
-      </div>
+      {isTextQ ? (
+        <textarea placeholder="Escriba su respuesta aquí..." value={typeof sel === "string" ? sel : ""} onChange={e => setSel(e.target.value)} style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", fontSize: 14, borderRadius: 8, border: "1px solid #e5e7eb", outline: "none", minHeight: 100, resize: "vertical", lineHeight: 1.6, marginBottom: "1.5rem" }} />
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: "1rem" }}>
+          {q.o.map((opt, i) => {
+            const isSel = sel && sel.l === opt.l;
+            return (
+              <button key={i} onClick={() => setSel({ v: opt.v, l: opt.l })} style={{ textAlign: "left", padding: "13px 16px", borderRadius: 10, cursor: "pointer", fontSize: 13, lineHeight: 1.55, display: "flex", alignItems: "center", gap: 10, width: "100%", border: isSel ? "2px solid #1a56db" : "1px solid #e5e7eb", background: isSel ? "#eff6ff" : "#fff", color: isSel ? "#1a56db" : "#111" }}>
+                <span style={{ minWidth: 20, height: 20, borderRadius: "50%", border: isSel ? "2px solid #1a56db" : "1.5px solid #d1d5db", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: isSel ? "#1a56db" : "transparent" }}>
+                  {isSel && <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff" }} />}
+                </span>
+                {opt.l}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {isSectorOtra && (
+        <div style={{ marginBottom: "1.5rem" }}>
+          <input type="text" placeholder="¿En qué sector opera? Describalo brevemente." value={sectorOtro} onChange={e => setSectorOtro(e.target.value)} style={{ width: "100%", boxSizing: "border-box", padding: "10px 14px", fontSize: 14, borderRadius: 8, border: "1px solid #1a56db", outline: "none" }} autoFocus />
+        </div>
+      )}
       <div style={{ display: "flex", gap: 8 }}>
         <button onClick={back} style={{ padding: "10px 18px", fontSize: 13, color: "#888", background: "none", border: "1px solid #e5e7eb", borderRadius: 8, cursor: "pointer" }}>← Atrás</button>
-        <button onClick={next} disabled={!sel} style={{ flex: 1, padding: "11px", fontSize: 14, borderRadius: 8, cursor: sel ? "pointer" : "not-allowed", opacity: sel ? 1 : 0.35, background: "#1a56db", color: "#fff", border: "none", fontWeight: 500 }}>
+        <button onClick={next} disabled={!isValid} style={{ flex: 1, padding: "11px", fontSize: 14, borderRadius: 8, cursor: isValid ? "pointer" : "not-allowed", opacity: isValid ? 1 : 0.35, background: "#1a56db", color: "#fff", border: "none", fontWeight: 500 }}>
           {idx + 1 === qs.length ? "Ver resultados →" : "Siguiente →"}
         </button>
       </div>
@@ -254,11 +249,32 @@ function ClienteForm({ onVolver }) {
           );
         })}
       </div>
-      {recs.length > 0 && (<div style={{ textAlign: "center", padding: "2rem 1rem" }}>
-  <p style={{ fontSize: 22, fontWeight: 500, margin: "0 0 12px", color: "#111" }}>Gracias por completar el diagnóstico.</p>
-  <p style={{ fontSize: 14, color: "#666", lineHeight: 1.7, margin: 0 }}>Sus respuestas fueron registradas. En los próximos días el equipo de Austral Financial Consulting estará en contacto con los resultados de su informe de madurez financiera.</p>
-</div>
+      {recs.length > 0 && (
+        <div style={{ marginBottom: "1.5rem" }}>
+          <p style={{ margin: "0 0 1rem", fontSize: 13, fontWeight: 500 }}>Las 3 acciones prioritarias</p>
+          {recs.map((r, i) => {
+            const lvi = lvl(r.ds);
+            const impC = r.imp === "Muy alto" ? "#ef4444" : r.imp === "Alto" ? "#f97316" : "#f59e0b";
+            return (
+              <div key={i} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: "1rem 1.25rem", borderLeft: "3px solid " + lvi.c, marginBottom: 10 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ width: 24, height: 24, borderRadius: "50%", background: lvi.c + "22", color: lvi.c, fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{i + 1}</span>
+                    <span style={{ fontSize: 14, fontWeight: 500 }}>{r.t}</span>
+                  </div>
+                  <span style={{ fontSize: 11, padding: "3px 8px", borderRadius: 4, background: impC + "18", color: impC, flexShrink: 0, marginLeft: 8 }}>{r.imp}</span>
+                </div>
+                <p style={{ margin: 0, fontSize: 13, color: "#555", lineHeight: 1.65, paddingLeft: 32 }}>{r.a}</p>
+              </div>
+            );
+          })}
+        </div>
       )}
+      <div style={{ background: "#eff6ff", borderRadius: 12, padding: "1.5rem", textAlign: "center", border: "1px solid #bfdbfe" }}>
+        <p style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 500, color: "#1a56db" }}>¿Quiere convertir este diagnóstico en un plan de acción concreto?</p>
+        <p style={{ margin: "0 0 1rem", fontSize: 13, color: "#3b82f6", lineHeight: 1.5 }}>Nuestro equipo prepara un informe completo con benchmarks de industria y un plan de transformación a 90 días.</p>
+        <a href="mailto:contacto@australconsulting.com" style={{ display: "inline-block", padding: "10px 24px", fontSize: 14, background: "#1a56db", color: "#fff", borderRadius: 8, textDecoration: "none", fontWeight: 500 }}>Hablar con un especialista →</a>
+      </div>
     </div>
   );
 }
@@ -323,38 +339,7 @@ function AnalistaForm({ onVolver }) {
     if (dir === "n") {
       if (si + 1 < dim.ss.length) setSi(i => i + 1);
       else if (di + 1 < DA.length) { setDi(i => i + 1); setSi(0); }
-      else {
-  setPh("sum");
-  // Calcular puntajes finales
-  const finalSc = sel !== null && qk ? { ...sc, [qk]: sel } : sc;
-  const dscFinal = DA.map(d => {
-    const vs = d.ss.map(s => finalSc[s.id]).filter(v => v !== undefined);
-    return { id: d.id, s: vs.length ? Math.round(vs.reduce((a, b) => a + b, 0) / vs.length) : 0 };
-  });
-  const imfFinal = Math.round(dscFinal.reduce((a, b) => a + b.s, 0) / dscFinal.length);
-  const dimMap = Object.fromEntries(dscFinal.map(d => [d.id, d.s]));
-
-  fetch('/api/generar-informe', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      tipo: 'analista',
-      empresa: inf.emp,
-      sector: inf.sec,
-      analista: inf.ana,
-      imf_total: imfFinal,
-      dimensiones: {
-        gobernanza: dimMap.g || 0,
-        planificacion: dimMap.p || 0,
-        tesoreria: dimMap.t || 0,
-        costos: dimMap.c || 0,
-        operaciones: dimMap.o || 0,
-        financiamiento: dimMap.f || 0
-      },
-      respuestas: { scores: finalSc, notas: nt, evidencia: ev }
-    })
-  }).catch(err => console.error('Error enviando informe analista:', err));
-}
+      else setPh("sum");
     } else {
       if (si > 0) setSi(i => i - 1);
       else if (di > 0) { setDi(i => i - 1); setSi(DA[di - 1].ss.length - 1); }
@@ -542,7 +527,7 @@ function App() {
           <button onClick={() => setVista("analista")} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1.25rem 1.5rem", borderRadius: 12, cursor: "pointer", textAlign: "left", border: "1.5px solid #dc262633", background: "#fff", color: "#111" }}>
             <div>
               <p style={{ margin: "0 0 3px", fontSize: 15, fontWeight: 500 }}>Soy analista</p>
-              <p style={{ margin: 0, fontSize: 13, opacity: .8 }}>Relevamiento avanzado</p>
+              <p style={{ margin: 0, fontSize: 13, opacity: .8 }}>Relevamiento avanzado · 90 minutos · 22 preguntas</p>
             </div>
             <span style={{ fontSize: 20 }}>→</span>
           </button>
