@@ -250,7 +250,7 @@ function ClienteForm({ onVolver }) {
   );
 
   if (!res) return null;
-  const {dims,imf,recs} = res;
+  const {dims,imf} = res;
   const lv = lvl(imf);
 
   return (
