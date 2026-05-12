@@ -2,7 +2,7 @@ const SKILL = `Eres el redactor de informes de Austral Financial Consulting. Red
 
 TONO: consultor senior Big Four, profesional y directo, sin exceso de formalidad, para gerentes sin perfil técnico financiero.
 LÓGICA: Explicar para cada dimensión la situación actual y que riesgos implica estar en esa situación, los cambios a introducir para lograr la situación deseada y que fortalezas generaría para el negocio.
-REGLAS: párrafos cortos/medianos, voz activa, sin muletillas, lenguaje de negocio simple. Utilizar conectores para que la lectura sea amena. 
+REGLAS: párrafos cortos/medianos, voz activa, sin muletillas, lenguaje de negocio simple. Utilizar conectores para que la lectura sea amena. En los títulos y subtítulos usar solo una mayúscula en la primera letra, ejemplo "Resultados del primer trimestre" y no "Resultados del Primer Trimestre".
 ESCALA IMF: 0-25 Sin desarrollar / 26-50 En desarrollo / 51-75 Maduro / 76-100 Optimizado
 
 ESTRUCTURA:
@@ -18,7 +18,7 @@ IMF Total: [XX]/100 — [Nivel]
 [Síntesis, dimensiones críticas, 3 acciones inmediatas]
 
 ## RESULTADOS POR DIMENSIÓN
-Para cada dimensión: situación actual, situación deseada, 3 acciones y horizonte.
+Para cada dimensión: situación actual y riesgos, situación deseada y fortalezas, 3 acciones con horizonte.
 
 ## TABLA RESUMEN IMF
 [Tabla con las 6 dimensiones y el IMF total]
@@ -84,7 +84,31 @@ async function saveToOneDrive(token, userEmail, empresa, contenido, tipo, imfTot
   );
 
   const uploadData = await uploadResponse.json();
-  console.log("OneDrive upload:", JSON.stringify(uploadData));
+  console.log("OneDrive TXT upload:", JSON.stringify(uploadData).slice(0, 200));
+  return uploadData;
+}
+
+async function savePdfToOneDrive(token, userEmail, empresa, pdfBytes, tipo, imfTotal) {
+  const fechaStr = new Date().toISOString().slice(0, 10);
+  const empresaLimpia = (empresa || "Sin-nombre").replace(/[^a-zA-Z0-9\s-]/g, "").trim().replace(/\s+/g, "-");
+  const tipoStr = tipo === "cliente" ? "Diagnostico-Inicial" : "Diagnostico-Avanzado";
+  const nombrePdf = fechaStr + "_" + empresaLimpia + "_" + tipoStr + "_IMF" + imfTotal + ".pdf";
+  const rutaCompleta = "Austral Consulting/Clientes/Diagnosticos IMF Austral/" + empresaLimpia;
+
+  const uploadResponse = await fetch(
+    "https://graph.microsoft.com/v1.0/users/" + userEmail + "/drive/root:/" + rutaCompleta + "/" + nombrePdf + ":/content",
+    {
+      method: "PUT",
+      headers: {
+        "Authorization": "Bearer " + token,
+        "Content-Type": "application/pdf"
+      },
+      body: pdfBytes
+    }
+  );
+
+  const uploadData = await uploadResponse.json();
+  console.log("OneDrive PDF upload:", JSON.stringify(uploadData).slice(0, 200));
   return uploadData;
 }
 
@@ -100,6 +124,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    // 1. Generar informe con Claude
     const claudeResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -139,6 +164,7 @@ module.exports = async function handler(req, res) {
       throw new Error("Claude: " + JSON.stringify(claudeData));
     }
 
+    // 2. Guardar en Supabase
     const supabaseResponse = await fetch(process.env.SUPABASE_URL + "/rest/v1/diagnosticos", {
       method: "POST",
       headers: {
@@ -168,17 +194,56 @@ module.exports = async function handler(req, res) {
     const supabaseData = await supabaseResponse.json();
     const diagnosticoId = supabaseData && supabaseData[0] && supabaseData[0].id;
 
+    // 3. Obtener token Azure
+    let azureToken = null;
     try {
-      const token = await getAzureToken(
+      azureToken = await getAzureToken(
         process.env.AZURE_TENANT_ID,
         process.env.AZURE_CLIENT_ID,
         process.env.AZURE_CLIENT_SECRET
       );
-      await saveToOneDrive(token, process.env.ONEDRIVE_USER_EMAIL, empresa, informeTexto, tipo, imf_total);
-    } catch (onedriveError) {
-      console.error("OneDrive error:", onedriveError.message);
+    } catch (tokenError) {
+      console.error("Azure token error:", tokenError.message);
     }
 
+    // 4. Guardar TXT en OneDrive
+    if (azureToken) {
+      try {
+        await saveToOneDrive(azureToken, process.env.ONEDRIVE_USER_EMAIL, empresa, informeTexto, tipo, imf_total);
+      } catch (txtError) {
+        console.error("OneDrive TXT error:", txtError.message);
+      }
+    }
+
+    // 5. Generar PDF y guardar en OneDrive
+    if (azureToken) {
+      try {
+        const pdfResponse = await fetch("https://austral-imf.vercel.app/api/generar-pdf", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            informe_texto: informeTexto,
+            empresa: empresa,
+            imf_total: imf_total,
+            tipo: tipo,
+            fecha: new Date().toLocaleDateString("es-AR")
+          })
+        });
+
+        if (pdfResponse.ok) {
+          const pdfBuffer = await pdfResponse.arrayBuffer();
+          const pdfBytes = Buffer.from(pdfBuffer);
+          await savePdfToOneDrive(azureToken, process.env.ONEDRIVE_USER_EMAIL, empresa, pdfBytes, tipo, imf_total);
+          console.log("PDF generado y guardado en OneDrive");
+        } else {
+          console.error("PDF response error:", pdfResponse.status);
+        }
+      } catch (pdfError) {
+        console.error("PDF error:", pdfError.message);
+      }
+    }
+
+    // 6. Enviar notificación por email
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -200,35 +265,3 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: error.message });
   }
 };
-// Generar PDF y subir a OneDrive
-try {
-  const pdfResponse = await fetch("https://austral-imf.vercel.app/api/generar-pdf", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      informe_texto: informeTexto,
-      empresa: empresa,
-      imf_total: imf_total,
-      tipo: tipo,
-      fecha: new Date().toLocaleDateString("es-AR")
-    })
-  });
-  if (pdfResponse.ok) {
-    const pdfBuffer = await pdfResponse.arrayBuffer();
-    const pdfBytes = Buffer.from(pdfBuffer);
-    const fechaStr = new Date().toISOString().slice(0, 10);
-    const empresaLimpia = (empresa || "Sin-nombre").replace(/[^a-zA-Z0-9\s-]/g, "").trim().replace(/\s+/g, "-");
-    const tipoStr = tipo === "cliente" ? "Diagnostico-Inicial" : "Diagnostico-Avanzado";
-    const nombrePdf = fechaStr + "_" + empresaLimpia + "_" + tipoStr + "_IMF" + imf_total + ".pdf";
-    const rutaCompleta = "Austral Consulting/Clientes/Diagnosticos IMF Austral/" + empresaLimpia;
-    const token = await getAzureToken(process.env.AZURE_TENANT_ID, process.env.AZURE_CLIENT_ID, process.env.AZURE_CLIENT_SECRET);
-    await fetch("https://graph.microsoft.com/v1.0/users/" + process.env.ONEDRIVE_USER_EMAIL + "/drive/root:/" + rutaCompleta + "/" + nombrePdf + ":/content", {
-      method: "PUT",
-      headers: { "Authorization": "Bearer " + token, "Content-Type": "application/pdf" },
-      body: pdfBytes
-    });
-    console.log("PDF guardado en OneDrive: " + nombrePdf);
-  }
-} catch (pdfError) {
-  console.error("PDF error:", pdfError.message);
-}
