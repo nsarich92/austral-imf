@@ -1,33 +1,33 @@
-const SKILL = `Eres el redactor de informes de Austral Financial Consulting. Redactá un informe de diagnóstico de madurez financiera profesional.
+const SKILL = `Eres el redactor de informes de Austral Financial Consulting. Redacta un informe de diagnostico de madurez financiera profesional.
 
-TONO: consultor senior Big Four, profesional y directo, sin exceso de formalidad, para gerentes sin perfil técnico financiero.
-LÓGICA: Explicar para cada dimensión la situación actual y que riesgos implica estar en esa situación, los cambios a introducir para lograr la situación deseada y que fortalezas generaría para el negocio.
-REGLAS: párrafos cortos/medianos, voz activa, sin muletillas, lenguaje de negocio simple. Utilizar conectores para que la lectura sea amena. En los títulos y subtítulos usar solo una mayúscula en la primera letra, ejemplo "Resultados del primer trimestre" y no "Resultados del Primer Trimestre".
+TONO: consultor senior Big Four, profesional y directo, para gerentes sin perfil tecnico financiero.
+LOGICA: Para cada dimension explicar situacion actual y riesgos, cambios para lograr la situacion deseada y fortalezas que generaria.
+REGLAS: parrafos cortos, voz activa, sin muletillas, lenguaje de negocio simple.
 ESCALA IMF: 0-25 Sin desarrollar / 26-50 En desarrollo / 51-75 Maduro / 76-100 Optimizado
 
 ESTRUCTURA:
-# DIAGNÓSTICO DE MADUREZ FINANCIERA
+# DIAGNOSTICO DE MADUREZ FINANCIERA
 ## [Nombre empresa] | [Fecha]
-CONFIDENCIAL — USO EXCLUSIVO DE AUSTRAL FINANCIAL CONSULTING
+CONFIDENCIAL - USO EXCLUSIVO DE AUSTRAL FINANCIAL CONSULTING
 
-## INTRODUCCIÓN
-[2 párrafos sobre propósito y metodología]
+## INTRODUCCION
+[2 parrafos sobre proposito y metodologia]
 
 ## RESUMEN EJECUTIVO
-IMF Total: [XX]/100 — [Nivel]
-[Síntesis, dimensiones críticas, 3 acciones inmediatas]
+IMF Total: [XX]/100 - [Nivel]
+[Sintesis, dimensiones criticas, 3 acciones inmediatas]
 
-## RESULTADOS POR DIMENSIÓN
-Para cada dimensión: situación actual y riesgos, situación deseada y fortalezas, 3 acciones con horizonte.
+## RESULTADOS POR DIMENSION
+Para cada dimension: situacion actual y riesgos, situacion deseada y fortalezas, 3 acciones con horizonte.
 
 ## TABLA RESUMEN IMF
 [Tabla con las 6 dimensiones y el IMF total]
 
 ## CONCLUSIONES
-[Síntesis, perspectiva, próximos pasos]
+[Sintesis, perspectiva, proximos pasos]
 
-## ANEXO — RESPUESTAS DEL CUESTIONARIO
-[Tabla con preguntas, respuestas y puntajes por dimensión]`;
+## ANEXO - RESPUESTAS DEL CUESTIONARIO
+[Tabla con preguntas, respuestas y puntajes por dimension]`;
 
 async function getAzureToken(tenantId, clientId, clientSecret) {
   const response = await fetch(
@@ -59,15 +59,8 @@ async function saveToOneDrive(token, userEmail, empresa, contenido, tipo, imfTot
     "https://graph.microsoft.com/v1.0/users/" + userEmail + "/drive/root:/" + rutaBase + ":/children",
     {
       method: "POST",
-      headers: {
-        "Authorization": "Bearer " + token,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name: empresaLimpia,
-        folder: {},
-        "@microsoft.graph.conflictBehavior": "rename"
-      })
+      headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify({ name: empresaLimpia, folder: {}, "@microsoft.graph.conflictBehavior": "rename" })
     }
   );
 
@@ -75,40 +68,13 @@ async function saveToOneDrive(token, userEmail, empresa, contenido, tipo, imfTot
     "https://graph.microsoft.com/v1.0/users/" + userEmail + "/drive/root:/" + rutaCompleta + "/" + nombreArchivo + ":/content",
     {
       method: "PUT",
-      headers: {
-        "Authorization": "Bearer " + token,
-        "Content-Type": "text/plain; charset=utf-8"
-      },
+      headers: { "Authorization": "Bearer " + token, "Content-Type": "text/plain; charset=utf-8" },
       body: contenido
     }
   );
 
   const uploadData = await uploadResponse.json();
-  console.log("OneDrive TXT upload:", JSON.stringify(uploadData).slice(0, 200));
-  return uploadData;
-}
-
-async function savePdfToOneDrive(token, userEmail, empresa, pdfBytes, tipo, imfTotal) {
-  const fechaStr = new Date().toISOString().slice(0, 10);
-  const empresaLimpia = (empresa || "Sin-nombre").replace(/[^a-zA-Z0-9\s-]/g, "").trim().replace(/\s+/g, "-");
-  const tipoStr = tipo === "cliente" ? "Diagnostico-Inicial" : "Diagnostico-Avanzado";
-  const nombrePdf = fechaStr + "_" + empresaLimpia + "_" + tipoStr + "_IMF" + imfTotal + ".pdf";
-  const rutaCompleta = "Austral Consulting/Clientes/Diagnosticos IMF Austral/" + empresaLimpia;
-
-  const uploadResponse = await fetch(
-    "https://graph.microsoft.com/v1.0/users/" + userEmail + "/drive/root:/" + rutaCompleta + "/" + nombrePdf + ":/content",
-    {
-      method: "PUT",
-      headers: {
-        "Authorization": "Bearer " + token,
-        "Content-Type": "application/pdf"
-      },
-      body: pdfBytes
-    }
-  );
-
-  const uploadData = await uploadResponse.json();
-  console.log("OneDrive PDF upload:", JSON.stringify(uploadData).slice(0, 200));
+  console.log("OneDrive upload:", JSON.stringify(uploadData).slice(0, 150));
   return uploadData;
 }
 
@@ -124,7 +90,6 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // 1. Generar informe con Claude
     const claudeResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -138,19 +103,19 @@ module.exports = async function handler(req, res) {
         system: SKILL,
         messages: [{
           role: "user",
-          content: "Redactá el informe completo para:\n" +
+          content: "Redacta el informe completo para:\n" +
             "Empresa: " + (empresa || "No informado") + "\n" +
             "Sector: " + (sector || "No informado") + "\n" +
-            "Tipo: " + (tipo === "cliente" ? "Diagnóstico inicial" : "Diagnóstico avanzado") + "\n" +
+            "Tipo: " + (tipo === "cliente" ? "Diagnostico inicial" : "Diagnostico avanzado") + "\n" +
             "Analista: " + (analista || "No informado") + "\n" +
             "Fecha: " + new Date().toLocaleDateString("es-AR") + "\n\n" +
             "PUNTAJES:\n" +
             "IMF Total: " + imf_total + "/100\n" +
             "Estrategia y Gobernanza: " + (dimensiones && dimensiones.gobernanza || 0) + "/100\n" +
-            "Planificación y Análisis: " + (dimensiones && dimensiones.planificacion || 0) + "/100\n" +
-            "Tesorería y Liquidez: " + (dimensiones && dimensiones.tesoreria || 0) + "/100\n" +
+            "Planificacion y Analisis: " + (dimensiones && dimensiones.planificacion || 0) + "/100\n" +
+            "Tesoreria y Liquidez: " + (dimensiones && dimensiones.tesoreria || 0) + "/100\n" +
             "Costos y Rentabilidad: " + (dimensiones && dimensiones.costos || 0) + "/100\n" +
-            "Operaciones y Tecnología: " + (dimensiones && dimensiones.operaciones || 0) + "/100\n" +
+            "Operaciones y Tecnologia: " + (dimensiones && dimensiones.operaciones || 0) + "/100\n" +
             "Financiamiento: " + (dimensiones && dimensiones.financiamiento || 0) + "/100\n\n" +
             "RESPUESTAS:\n" + JSON.stringify(respuestas, null, 2)
         }]
@@ -164,7 +129,6 @@ module.exports = async function handler(req, res) {
       throw new Error("Claude: " + JSON.stringify(claudeData));
     }
 
-    // 2. Guardar en Supabase
     const supabaseResponse = await fetch(process.env.SUPABASE_URL + "/rest/v1/diagnosticos", {
       method: "POST",
       headers: {
@@ -194,7 +158,6 @@ module.exports = async function handler(req, res) {
     const supabaseData = await supabaseResponse.json();
     const diagnosticoId = supabaseData && supabaseData[0] && supabaseData[0].id;
 
-    // 3. Obtener token Azure
     let azureToken = null;
     try {
       azureToken = await getAzureToken(
@@ -206,44 +169,14 @@ module.exports = async function handler(req, res) {
       console.error("Azure token error:", tokenError.message);
     }
 
-    // 4. Guardar TXT en OneDrive
     if (azureToken) {
       try {
         await saveToOneDrive(azureToken, process.env.ONEDRIVE_USER_EMAIL, empresa, informeTexto, tipo, imf_total);
       } catch (txtError) {
-        console.error("OneDrive TXT error:", txtError.message);
+        console.error("OneDrive error:", txtError.message);
       }
     }
 
-    // 5. Generar PDF y guardar en OneDrive
-    if (azureToken) {
-      try {
-        const pdfResponse = await fetch("https://austral-imf.vercel.app/api/generar-pdf", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            informe_texto: informeTexto,
-            empresa: empresa,
-            imf_total: imf_total,
-            tipo: tipo,
-            fecha: new Date().toLocaleDateString("es-AR")
-          })
-        });
-
-        if (pdfResponse.ok) {
-          const pdfBuffer = await pdfResponse.arrayBuffer();
-          const pdfBytes = Buffer.from(pdfBuffer);
-          await savePdfToOneDrive(azureToken, process.env.ONEDRIVE_USER_EMAIL, empresa, pdfBytes, tipo, imf_total);
-          console.log("PDF generado y guardado en OneDrive");
-        } else {
-          console.error("PDF response error:", pdfResponse.status);
-        }
-      } catch (pdfError) {
-        console.error("PDF error:", pdfError.message);
-      }
-    }
-
-    // 6. Enviar notificación por email
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -253,8 +186,8 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({
         from: "noreply@consultingaustral.com",
         to: "nsarich@consultingaustral.com",
-        subject: "Nuevo diagnóstico IMF — " + (empresa || "Empresa sin nombre") + " (" + imf_total + "/100)",
-        html: "<div style='font-family:sans-serif;max-width:500px'><h2 style='color:#212536'>Nuevo diagnóstico completado</h2><p><b>Empresa:</b> " + (empresa || "No informado") + "</p><p><b>Sector:</b> " + (sector || "No informado") + "</p><p><b>Tipo:</b> " + (tipo === "cliente" ? "Diagnóstico inicial" : "Diagnóstico avanzado") + "</p><p><b>IMF Total:</b> " + imf_total + "/100</p><p><b>Fecha:</b> " + new Date().toLocaleDateString("es-AR") + "</p></div>"
+        subject: "Nuevo diagnostico IMF - " + (empresa || "Empresa sin nombre") + " (" + imf_total + "/100)",
+        html: "<div style='font-family:sans-serif;max-width:500px'><h2 style='color:#212536'>Nuevo diagnostico completado</h2><p><b>Empresa:</b> " + (empresa || "No informado") + "</p><p><b>Sector:</b> " + (sector || "No informado") + "</p><p><b>Tipo:</b> " + (tipo === "cliente" ? "Diagnostico inicial" : "Diagnostico avanzado") + "</p><p><b>IMF Total:</b> " + imf_total + "/100</p><p><b>Fecha:</b> " + new Date().toLocaleDateString("es-AR") + "</p></div>"
       })
     });
 
